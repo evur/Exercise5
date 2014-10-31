@@ -119,7 +119,10 @@ namespace {
 		float factor = 0.0f;
 		float factorStep = 1.0f / xdiff;
 
-		for (int x = span.x1; x < span.x2; ++x) {
+		int xMin = max(0, span.x1);
+		int xMax = min(span.x2, width);
+
+		for (int x = xMin; x < xMax; ++x) {
 			setPixel(x, y, 1, 0, 0);
 			factor += factorStep;
 		}
@@ -140,7 +143,10 @@ namespace {
 		float factor2 = 0.0f;
 		float factorStep2 = 1.0f / e2ydiff;
 
-		for (int y = e2.y1; y < e2.y2; ++y) {
+		int yMin = max(0, e2.y1);
+		int yMax = min(e2.y2, height);
+
+		for (int y = yMin; y < yMax; ++y) {
 			Span span(e1.x1 + (int)(e1xdiff * factor1), e2.x1 + (int)(e2xdiff * factor2));
 			drawSpan(span, y);
 			factor1 += factorStep1;
