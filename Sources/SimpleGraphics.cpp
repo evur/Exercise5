@@ -40,6 +40,7 @@ void clear(float red, float green, float blue) {
 }
 
 void setPixel(int x, int y, float red, float green, float blue) {
+	if (x < 0 || x >= width || y < 0 || y >= height) return;
 	CONVERT_COLORS(red, green, blue);
 #ifdef OPENGL
 	image[y * texture->width + x] = 0xff << 24 | b << 16 | g << 8 | r;
