@@ -82,7 +82,7 @@ namespace {
 		char* token;
 		for (int i = 0; i < 3; i++) {
 			token = strtok(nullptr, " ");
-			mesh->curVertex[i] = strtof(token, nullptr);
+			mesh->curVertex[i] = (float)strtod(token, nullptr);
 		}
 
 		mesh->curVertex += 3;
@@ -151,7 +151,7 @@ namespace {
 		char* token;
 		for (int i = 0; i < 2; i++) {
 			token = strtok(nullptr, " ");
-			*mesh->curUV = strtof(token, nullptr);
+			*mesh->curUV = (float)strtod(token, nullptr);
 			mesh->curUV++;
 		}
 	}
