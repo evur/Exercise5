@@ -7,14 +7,16 @@
 using namespace Kore;
 
 namespace {
-	char* tokenize(char* s, char delimiter, int lastIndex, int* newIndex) {
+	char* tokenize(char* s, char delimiter, int& i) {
+		int lastIndex = i;
 		char* index = strchr(s + lastIndex + 1, delimiter);
 		if (index == nullptr) {
 			return nullptr;
 		}
-		*newIndex = index - s;
-		const int length = *newIndex - lastIndex;
-		char* token = new char[length];
+		int newIndex = (int)(index - s);
+		i = newIndex;
+		int length = newIndex - lastIndex;
+		char* token = new char[length + 1];
 		strncpy(token, s + lastIndex + 1, length);
 		token[length] = 0;
 		return token;
@@ -23,16 +25,14 @@ namespace {
 	int countFirstCharLines(char* source, const char* start) {
 		int count = 0;
 
-		int index;
-		char* line = tokenize(source, '\n', 0, &index);
-
-		int length = strlen(start);
+		int index = 0;
+		char* line = tokenize(source, '\n', index);
 
 		while (line != nullptr) {
 			char *pch = strstr(line, start);
 			if (pch == line)
 				count++;
-			line = tokenize(source, '\n', index, &index);
+			line = tokenize(source, '\n', index);
 		}
 		return count;
 	}
@@ -58,15 +58,14 @@ namespace {
 	int countFaces(char* source) {
 		int count = 0;
 
-		int index;
-		char* line = tokenize(source, '\n', 0, &index);
-
+		int index = 0;
+		char* line = tokenize(source, '\n', index);
 
 		while (line != nullptr) {
 			if (line[0] == 'f') {
 				count += countFacesInLine(line);
 			}
-			line = tokenize(source, '\n', index, &index);
+			line = tokenize(source, '\n', index);
 		}
 		return count;
 	}
@@ -107,11 +106,11 @@ namespace {
 		for (int i = 0; i < 3; i++) {
 			token = strtok(nullptr, " ");
 			char* endPtr;
-			verts[i] = strtol(token, &endPtr, 0) - 1;
+			verts[i] = (int)strtol(token, &endPtr, 0) - 1;
 			if (endPtr[0] == '/') {
 				// Parse the uv
 				hasUV[i] = true;
-				uvIndex[i] = strtol(endPtr + 1, nullptr, 0) - 1;
+				uvIndex[i] = (int)strtol(endPtr + 1, nullptr, 0) - 1;
 			}
 			else {
 				// There is no uv
@@ -121,7 +120,7 @@ namespace {
 		token = strtok(nullptr, " ");
 		//char* result;
 		if (token != nullptr) {
-			verts[3] = strtol(token, nullptr, 0) - 1;
+			verts[3] = (int)strtol(token, nullptr, 0) - 1;
 			// We have a quad
 			mesh->curIndex[0] = verts[0];
 			mesh->curIndex[1] = verts[1];
@@ -176,7 +175,7 @@ namespace {
 }
 
 Mesh* loadObj(const char* filename) {
-	FileReader fileReader(filename, Kore::FileReader::FileType::Asset);
+	FileReader fileReader(filename, FileReader::Asset);
 	void* data = fileReader.readAll();
 	int length = fileReader.size() + 1;
 	char* source = new char[length];
@@ -198,15 +197,15 @@ Mesh* loadObj(const char* filename) {
 	mesh->numVertices = 0;
 	mesh->numFaces = 0;
 	
-	int index;
-	char* line = tokenize(source, '\n', 0, &index);
+	int index = 0;
+	char* line = tokenize(source, '\n', index);
 	
 	// TODO: Can we do that?
 	while (line != nullptr) {
 		// TODO: How do I give this memory back?
 		// delete line;	
 		parseLine(mesh, line);
-		line = tokenize(source, '\n', index, &index);
+		line = tokenize(source, '\n', index);
 	}
 
 	return mesh;
