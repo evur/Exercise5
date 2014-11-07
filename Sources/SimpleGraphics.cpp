@@ -81,9 +81,9 @@ void drawImage(Image* image, int x, int y) {
 
 void getPixel(Image* image, int x, int y, float& red, float& green, float& blue) {
 	int col = image->at(x, y);
-	blue = (col & 0xff0000) >> 16;
-	green = (col & 0xff00) >> 8;
-	red = col & 0xff;
+	blue = ((col & 0xff0000) >> 16) / 255.0f;
+	green = ((col & 0xff00) >> 8) / 255.0f;
+	red = (col & 0xff) / 255.0f;
 }
 
 namespace {
