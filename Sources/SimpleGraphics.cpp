@@ -9,7 +9,7 @@
 
 using namespace Kore;
 
-void shadePixel(int x, int y, float u, float v);
+void shadePixel(int x, int y, float z, float u, float v);
 
 namespace {
 	Shader* vertexShader;
@@ -89,26 +89,31 @@ void getPixel(Image* image, int x, int y, float& red, float& green, float& blue)
 namespace {
 	struct Edge {
 		int x1, y1, x2, y2;
+		float z1, z2;
 		float u1, v1, u2, v2;
 
-		Edge(int x1, int y1, float u1, float v1, int x2, int y2, float u2, float v2) {
+		Edge(int x1, int y1, float z1, float u1, float v1, int x2, int y2, float z2, float u2, float v2) {
 			if (y1 < y2) {
 				this->x1 = x1;
 				this->y1 = y1;
+				this->z1 = z1;
 				this->u1 = u1;
 				this->v1 = v1;
 				this->x2 = x2;
 				this->y2 = y2;
+				this->z2 = z2;
 				this->u2 = u2;
 				this->v2 = v2;
 			}
 			else {
 				this->x1 = x2;
 				this->y1 = y2;
+				this->z1 = z2;
 				this->u1 = u2;
 				this->v1 = v2;
 				this->x2 = x1;
 				this->y2 = y1;
+				this->z2 = z1;
 				this->u2 = u1;
 				this->v2 = v1;
 			}
@@ -117,13 +122,16 @@ namespace {
 
 	struct Span {
 		int x1, x2;
-		float u1, v1;
-		float u2, v2;
+		float z1, z2;
+		float u1, u2;
+		float v1, v2;
 
-		Span(int x1, int x2, float u1, float v1, float u2, float v2) {
+		Span(int x1, int x2, float z1, float z2, float u1, float u2, float v1, float v2) {
 			if (x1 < x2) {
 				this->x1 = x1;
 				this->x2 = x2;
+				this->z1 = z1;
+				this->z2 = z2;
 				this->u1 = u1;
 				this->v1 = v1;
 				this->u2 = u2;
@@ -132,6 +140,8 @@ namespace {
 			else {
 				this->x1 = x2;
 				this->x2 = x1;
+				this->z1 = z2;
+				this->z2 = z1;
 				this->u1 = u2;
 				this->v1 = v2;
 				this->u2 = u1;
@@ -144,6 +154,7 @@ namespace {
 		int xdiff = span.x2 - span.x1;
 		if (xdiff == 0) return;
 
+		float zdiff = span.z2 - span.z1;
 		float udiff = span.u2 - span.u1;
 		float vdiff = span.v2 - span.v1;
 
@@ -154,9 +165,10 @@ namespace {
 		int xMax = min(span.x2, width);
 
 		for (int x = xMin; x < xMax; ++x) {
+			float z = span.z1 + zdiff * factor;
 			float u = span.u1 + udiff * factor;
 			float v = span.v1 + vdiff * factor;
-			shadePixel(x, y, u, v);
+			shadePixel(x, y, z, u, v);
 			factor += factorStep;
 		}
 	}
@@ -170,6 +182,8 @@ namespace {
 
 		float e1xdiff = (float)(e1.x2 - e1.x1);
 		float e2xdiff = (float)(e2.x2 - e2.x1);
+		float z1diff = e1.z2 - e1.z1;
+		float z2diff = e2.z2 - e2.z1;
 		float e1udiff = e1.u2 - e1.u1;
 		float e1vdiff = e1.v2 - e1.v1;
 		float e2udiff = e2.u2 - e2.u1;
@@ -184,7 +198,10 @@ namespace {
 		int yMax = min(e2.y2, height);
 
 		for (int y = yMin; y < yMax; ++y) {
-			Span span(e1.x1 + (int)(e1xdiff * factor1), e2.x1 + (int)(e2xdiff * factor2), e1.u1 + e1udiff * factor1, e1.v1 + e1vdiff * factor1, e2.u1 + e2udiff * factor2, e2.v1 + e2vdiff * factor2);
+			Span span(e1.x1 + (int)(e1xdiff * factor1), e2.x1 + (int)(e2xdiff * factor2),
+				e1.z1 + z1diff * factor1, e2.z1 + z2diff * factor2,
+				e1.u1 + e1udiff * factor1, e2.u1 + e2udiff * factor2,
+				e1.v1 + e1vdiff * factor1, e2.v1 + e2vdiff * factor2); // check
 			drawSpan(span, y);
 			factor1 += factorStep1;
 			factor2 += factorStep2;
@@ -192,11 +209,11 @@ namespace {
 	}
 }
 
-void drawTriangle(float x1, float y1, float u1, float v1, float x2, float y2, float u2, float v2, float x3, float y3, float u3, float v3) {
+void drawTriangle(float x1, float y1, float z1, float u1, float v1, float x2, float y2, float z2, float u2, float v2, float x3, float y3, float z3, float u3, float v3) {
 	Edge edges[3] = {
-		Edge((int)Kore::round(x1), (int)Kore::round(y1), u1, v1, (int)Kore::round(x2), (int)Kore::round(y2), u2, v2),
-		Edge((int)Kore::round(x2), (int)Kore::round(y2), u2, v2, (int)Kore::round(x3), (int)Kore::round(y3), u3, v3),
-		Edge((int)Kore::round(x3), (int)Kore::round(y3), u3, v3, (int)Kore::round(x1), (int)Kore::round(y1), u1, v1)
+		Edge((int)Kore::round(x1), (int)Kore::round(y1), z1, u1, v1, (int)Kore::round(x2), (int)Kore::round(y2), z2, u2, v2),
+		Edge((int)Kore::round(x2), (int)Kore::round(y2), z2, u2, v2, (int)Kore::round(x3), (int)Kore::round(y3), z3, u3, v3),
+		Edge((int)Kore::round(x3), (int)Kore::round(y3), z3, u3, v3, (int)Kore::round(x1), (int)Kore::round(y1), z1, u1, v1)
 	};
 
 	int maxLength = 0;

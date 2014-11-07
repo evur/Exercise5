@@ -51,9 +51,9 @@ namespace {
 			float v3 = mesh->vertices[i3 * 5 + 4];
 
 			drawTriangle(
-				x1 * 2 + 500, y1 * 2 + 400, u1, v1,
-				x2 * 2 + 500, y2 * 2 + 400, u2, v2,
-				x3 * 2 + 500, y3 * 2 + 400, u3, v3);
+				x1 * 2 + 500, y1 * 2 + 400, z1, u1, v1,
+				x2 * 2 + 500, y2 * 2 + 400, z2, u2, v2,
+				x3 * 2 + 500, y3 * 2 + 400, z3, u3, v3);
 		}
 
 		endFrame();
@@ -84,7 +84,7 @@ namespace {
 	}
 }
 
-void shadePixel(int x, int y, float u, float v) {
+void shadePixel(int x, int y, float z, float u, float v) {
 	// Use the passed values to draw a nice pixel using setPixel(x, y, ...).
 	// Use getPixel to read image data, which is returned in the reference parameters.
 
