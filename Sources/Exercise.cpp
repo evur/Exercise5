@@ -8,6 +8,7 @@
 #include <Kore/Input/KeyEvent.h>
 #include <Kore/Input/Mouse.h>
 #include <Kore/Audio/Mixer.h>
+#include <Kore/Graphics/Image.h>
 #include "SimpleGraphics.h"
 #include "ObjLoader.h"
 
@@ -16,6 +17,7 @@ using namespace Kore;
 namespace {
 	double startTime;
 	Mesh* mesh;
+	Image* image;
 
 	void update() {
 		float t = (float)(System::time() - startTime);
@@ -33,19 +35,25 @@ namespace {
 			float x1 = mesh->vertices[i1 * 5 + 0];
 			float y1 = -mesh->vertices[i1 * 5 + 1];
 			float z1 = mesh->vertices[i1 * 5 + 2];
+			float u1 = mesh->vertices[i1 * 5 + 3];
+			float v1 = mesh->vertices[i1 * 5 + 4];
 
 			float x2 = mesh->vertices[i2 * 5 + 0];
 			float y2 = -mesh->vertices[i2 * 5 + 1];
 			float z2 = mesh->vertices[i2 * 5 + 2];
+			float u2 = mesh->vertices[i2 * 5 + 3];
+			float v2 = mesh->vertices[i2 * 5 + 4];
 
 			float x3 = mesh->vertices[i3 * 5 + 0];
 			float y3 = -mesh->vertices[i3 * 5 + 1];
 			float z3 = mesh->vertices[i3 * 5 + 2];
+			float u3 = mesh->vertices[i3 * 5 + 3];
+			float v3 = mesh->vertices[i3 * 5 + 4];
 
 			drawTriangle(
-				x1 * 2000 + 600, y1 * 2000 + 600,
-				x2 * 2000 + 600, y2 * 2000 + 600,
-				x3 * 2000 + 600, y3 * 2000 + 600);
+				x1 * 2 + 500, y1 * 2 + 400, u1, v1,
+				x2 * 2 + 500, y2 * 2 + 400, u2, v2,
+				x3 * 2 + 500, y3 * 2 + 400, u3, v3);
 		}
 
 		endFrame();
@@ -76,6 +84,12 @@ namespace {
 	}
 }
 
+void shadePixel(int x, int y, float u, float v) {
+	// Use the passed values to draw a nice pixel using setPixel(x, y, ...).
+	// Use getPixel to read image data, which is returned in the reference parameters.
+
+}
+
 int kore(int argc, char** argv) {
 	Application* app = new Application(argc, argv, width, height, false, "Exercise3");
 	
@@ -87,7 +101,8 @@ int kore(int argc, char** argv) {
 	Kore::Audio::init();
 	//Kore::Mixer::play(new SoundStream("back.ogg", true));
 
-	mesh = loadObj("bunny.obj");
+	mesh = loadObj("tiger.obj");
+	image = new Image("tiger-atlas.jpg", true);
 
 	Keyboard::the()->KeyDown = keyDown;
 	Keyboard::the()->KeyUp = keyUp;

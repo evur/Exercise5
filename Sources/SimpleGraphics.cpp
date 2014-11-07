@@ -9,6 +9,8 @@
 
 using namespace Kore;
 
+void shadePixel(int x, int y, float u, float v);
+
 namespace {
 	Shader* vertexShader;
 	Shader* fragmentShader;
@@ -77,44 +79,73 @@ void drawImage(Image* image, int x, int y) {
 	}
 }
 
+void getPixel(Image* image, int x, int y, float& red, float& green, float& blue) {
+	int col = image->at(x, y);
+	blue = (col & 0xff0000) >> 16;
+	green = (col & 0xff00) >> 8;
+	red = col & 0xff;
+}
+
 namespace {
 	struct Edge {
 		int x1, y1, x2, y2;
+		float u1, v1, u2, v2;
 
-		Edge(int x1, int y1, int x2, int y2) {
+		Edge(int x1, int y1, float u1, float v1, int x2, int y2, float u2, float v2) {
 			if (y1 < y2) {
 				this->x1 = x1;
 				this->y1 = y1;
+				this->u1 = u1;
+				this->v1 = v1;
 				this->x2 = x2;
 				this->y2 = y2;
+				this->u2 = u2;
+				this->v2 = v2;
 			}
 			else {
 				this->x1 = x2;
 				this->y1 = y2;
+				this->u1 = u2;
+				this->v1 = v2;
 				this->x2 = x1;
 				this->y2 = y1;
+				this->u2 = u1;
+				this->v2 = v1;
 			}
 		}
 	};
 
 	struct Span {
 		int x1, x2;
+		float u1, v1;
+		float u2, v2;
 
-		Span(int x1, int x2) {
+		Span(int x1, int x2, float u1, float v1, float u2, float v2) {
 			if (x1 < x2) {
 				this->x1 = x1;
 				this->x2 = x2;
+				this->u1 = u1;
+				this->v1 = v1;
+				this->u2 = u2;
+				this->v2 = v2;
 			}
 			else {
 				this->x1 = x2;
 				this->x2 = x1;
+				this->u1 = u2;
+				this->v1 = v2;
+				this->u2 = u1;
+				this->v2 = v1;
 			}
 		}
 	};
 
-	void drawSpan(const Span &span, int y) {
+	void drawSpan(const Span& span, int y) {
 		int xdiff = span.x2 - span.x1;
 		if (xdiff == 0) return;
+
+		float udiff = span.u2 - span.u1;
+		float vdiff = span.v2 - span.v1;
 
 		float factor = 0.0f;
 		float factorStep = 1.0f / xdiff;
@@ -123,12 +154,14 @@ namespace {
 		int xMax = min(span.x2, width);
 
 		for (int x = xMin; x < xMax; ++x) {
-			setPixel(x, y, 1, 0, 0);
+			float u = span.u1 + udiff * factor;
+			float v = span.v1 + vdiff * factor;
+			shadePixel(x, y, u, v);
 			factor += factorStep;
 		}
 	}
 
-	void drawSpansBetweenEdges(const Edge &e1, const Edge &e2) {
+	void drawSpansBetweenEdges(const Edge& e1, const Edge& e2) {
 		float e1ydiff = (float)(e1.y2 - e1.y1);
 		if (e1ydiff == 0.0f) return;
 
@@ -137,6 +170,10 @@ namespace {
 
 		float e1xdiff = (float)(e1.x2 - e1.x1);
 		float e2xdiff = (float)(e2.x2 - e2.x1);
+		float e1udiff = e1.u2 - e1.u1;
+		float e1vdiff = e1.v2 - e1.v1;
+		float e2udiff = e2.u2 - e2.u1;
+		float e2vdiff = e2.v2 - e2.v1;
 
 		float factor1 = (float)(e2.y1 - e1.y1) / e1ydiff;
 		float factorStep1 = 1.0f / e1ydiff;
@@ -147,7 +184,7 @@ namespace {
 		int yMax = min(e2.y2, height);
 
 		for (int y = yMin; y < yMax; ++y) {
-			Span span(e1.x1 + (int)(e1xdiff * factor1), e2.x1 + (int)(e2xdiff * factor2));
+			Span span(e1.x1 + (int)(e1xdiff * factor1), e2.x1 + (int)(e2xdiff * factor2), e1.u1 + e1udiff * factor1, e1.v1 + e1vdiff * factor1, e2.u1 + e2udiff * factor2, e2.v1 + e2vdiff * factor2);
 			drawSpan(span, y);
 			factor1 += factorStep1;
 			factor2 += factorStep2;
@@ -155,11 +192,11 @@ namespace {
 	}
 }
 
-void drawTriangle(float x1, float y1, float x2, float y2, float x3, float y3) {
+void drawTriangle(float x1, float y1, float u1, float v1, float x2, float y2, float u2, float v2, float x3, float y3, float u3, float v3) {
 	Edge edges[3] = {
-		Edge((int)Kore::round(x1), (int)Kore::round(y1), (int)Kore::round(x2), (int)Kore::round(y2)),
-		Edge((int)Kore::round(x2), (int)Kore::round(y2), (int)Kore::round(x3), (int)Kore::round(y3)),
-		Edge((int)Kore::round(x3), (int)Kore::round(y3), (int)Kore::round(x1), (int)Kore::round(y1))
+		Edge((int)Kore::round(x1), (int)Kore::round(y1), u1, v1, (int)Kore::round(x2), (int)Kore::round(y2), u2, v2),
+		Edge((int)Kore::round(x2), (int)Kore::round(y2), u2, v2, (int)Kore::round(x3), (int)Kore::round(y3), u3, v3),
+		Edge((int)Kore::round(x3), (int)Kore::round(y3), u3, v3, (int)Kore::round(x1), (int)Kore::round(y1), u1, v1)
 	};
 
 	int maxLength = 0;
