@@ -164,6 +164,8 @@ namespace {
 		int xMin = max(0, span.x1);
 		int xMax = min(span.x2, width);
 
+		factor += factorStep * -min(0, span.x1);
+
 		for (int x = xMin; x < xMax; ++x) {
 			float z = span.z1 + zdiff * factor;
 			float u = span.u1 + udiff * factor;
@@ -197,11 +199,14 @@ namespace {
 		int yMin = max(0, e2.y1);
 		int yMax = min(e2.y2, height);
 
+		factor1 += factorStep1 * -min(0, e2.y1);
+		factor2 += factorStep2 * -min(0, e2.y1);
+
 		for (int y = yMin; y < yMax; ++y) {
 			Span span(e1.x1 + (int)(e1xdiff * factor1), e2.x1 + (int)(e2xdiff * factor2),
 				e1.z1 + z1diff * factor1, e2.z1 + z2diff * factor2,
 				e1.u1 + e1udiff * factor1, e2.u1 + e2udiff * factor2,
-				e1.v1 + e1vdiff * factor1, e2.v1 + e2vdiff * factor2); // check
+				e1.v1 + e1vdiff * factor1, e2.v1 + e2vdiff * factor2);
 			drawSpan(span, y);
 			factor1 += factorStep1;
 			factor2 += factorStep2;
