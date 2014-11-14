@@ -32,8 +32,8 @@ namespace {
 		Kore::Audio::update();
 		
 		Graphics::begin();
-		Graphics::clear(Graphics::ClearColorFlag | Graphics::ClearDepthFlag, 0xff000000, 1.0f);
-
+		Graphics::clear(Graphics::ClearColorFlag | Graphics::ClearDepthFlag, 0xff000000);
+		
 		program->set();
 		image->set(tex);
 		vertexBuffer->set();
@@ -81,6 +81,7 @@ namespace {
 		VertexStructure structure;
 		structure.add("pos", Float3VertexData);
 		structure.add("tex", Float2VertexData);
+		structure.add("nor", Float3VertexData);
 
 		program = new Program;
 		program->setVertexShader(vertexShader);
@@ -90,22 +91,26 @@ namespace {
 		tex = program->getTextureUnit("tex");
 
 		// Set this to 1.0f when you do your transformations in the vertex shader
-		float scale = 0.005f;
+		float scale = 0.2f;
 
 		vertexBuffer = new VertexBuffer(mesh->numVertices, structure);
 		float* vertices = vertexBuffer->lock();
 		for (int i = 0; i < mesh->numVertices; ++i) {
-			vertices[i * 5 + 0] = mesh->vertices[i * 5 + 0] * scale;
-			vertices[i * 5 + 1] = mesh->vertices[i * 5 + 1] * scale;
-			vertices[i * 5 + 2] = mesh->vertices[i * 5 + 2] * scale;
-			vertices[i * 5 + 3] = mesh->vertices[i * 5 + 3];
-			vertices[i * 5 + 4] = mesh->vertices[i * 5 + 4];
+			vertices[i * 8 + 0] = mesh->vertices[i * 8 + 0] * scale;
+			vertices[i * 8 + 1] = mesh->vertices[i * 8 + 1] * scale;
+			vertices[i * 8 + 2] = mesh->vertices[i * 8 + 2] * scale;
+			vertices[i * 8 + 3] = mesh->vertices[i * 8 + 3];
+			vertices[i * 8 + 4] = 1.0f - mesh->vertices[i * 5 + 4];
+			vertices[i * 8 + 5] = mesh->vertices[i * 8 + 5];
+			vertices[i * 8 + 6] = mesh->vertices[i * 8 + 6];
+			vertices[i * 8 + 7] = mesh->vertices[i * 8 + 7];
 		}
+
 		vertexBuffer->unlock();
 
 		indexBuffer = new IndexBuffer(mesh->numFaces * 3);
 		int* indices = indexBuffer->lock();
-		for (int i = 0; i < mesh->numFaces * 3; ++i) {
+		for (int i = 0; i < mesh->numFaces * 3; i++) {
 			indices[i] = mesh->indices[i];
 		}
 		indexBuffer->unlock();
