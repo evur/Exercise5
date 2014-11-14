@@ -32,7 +32,7 @@ namespace {
 		Kore::Audio::update();
 		
 		Graphics::begin();
-		Graphics::clear(Graphics::ClearColorFlag, 0xff000000);
+		Graphics::clear(Graphics::ClearColorFlag | Graphics::ClearDepthFlag, 0xff000000, 1.0f);
 
 		program->set();
 		image->set(tex);
@@ -109,6 +109,9 @@ namespace {
 			indices[i] = mesh->indices[i];
 		}
 		indexBuffer->unlock();
+
+		Graphics::setRenderState(DepthTest, true);
+		Graphics::setRenderState(DepthTestCompare, ZCompareLess);
 	}
 }
 
