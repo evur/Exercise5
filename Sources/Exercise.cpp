@@ -9,54 +9,39 @@
 #include <Kore/Input/Mouse.h>
 #include <Kore/Audio/Mixer.h>
 #include <Kore/Graphics/Image.h>
-#include "SimpleGraphics.h"
+#include <Kore/Graphics/Graphics.h>
 #include "ObjLoader.h"
 
 using namespace Kore;
 
 namespace {
+	const int width = 1024;
+	const int height = 768;
 	double startTime;
+	Shader* vertexShader;
+	Shader* fragmentShader;
+	Program* program;
+	VertexBuffer* vertexBuffer;
+	IndexBuffer* indexBuffer;
 	Mesh* mesh;
-	Image* image;
+	Texture* image;
+	TextureUnit tex;
 
 	void update() {
 		float t = (float)(System::time() - startTime);
 		Kore::Audio::update();
 		
-		startFrame();
+		Graphics::begin();
+		Graphics::clear(Graphics::ClearColorFlag, 0xff000000);
 
-		clear(0, 0, 0);
-		// Add some nice transformations
-		for (int i = 0; i < mesh->numFaces; ++i) {
-			int i1 = mesh->indices[i * 3 + 0];
-			int i2 = mesh->indices[i * 3 + 1];
-			int i3 = mesh->indices[i * 3 + 2];
+		program->set();
+		image->set(tex);
+		vertexBuffer->set();
+		indexBuffer->set();
+		Graphics::drawIndexedVertices();
 
-			float x1 = mesh->vertices[i1 * 5 + 0];
-			float y1 = -mesh->vertices[i1 * 5 + 1];
-			float z1 = mesh->vertices[i1 * 5 + 2];
-			float u1 = mesh->vertices[i1 * 5 + 3];
-			float v1 = mesh->vertices[i1 * 5 + 4];
-
-			float x2 = mesh->vertices[i2 * 5 + 0];
-			float y2 = -mesh->vertices[i2 * 5 + 1];
-			float z2 = mesh->vertices[i2 * 5 + 2];
-			float u2 = mesh->vertices[i2 * 5 + 3];
-			float v2 = mesh->vertices[i2 * 5 + 4];
-
-			float x3 = mesh->vertices[i3 * 5 + 0];
-			float y3 = -mesh->vertices[i3 * 5 + 1];
-			float z3 = mesh->vertices[i3 * 5 + 2];
-			float u3 = mesh->vertices[i3 * 5 + 3];
-			float v3 = mesh->vertices[i3 * 5 + 4];
-
-			drawTriangle(
-				x1 * 2 + 500, y1 * 2 + 400, z1, u1, v1,
-				x2 * 2 + 500, y2 * 2 + 400, z2, u2, v2,
-				x3 * 2 + 500, y3 * 2 + 400, z3, u3, v3);
-		}
-
-		endFrame();
+		Graphics::end();
+		Graphics::swapBuffers();
 	}
 
 	void keyDown(KeyEvent* event) {
@@ -82,28 +67,63 @@ namespace {
 	void mouseRelease(int button, int x, int y) {
 
 	}
-}
 
-void shadePixel(int x, int y, float z, float u, float v) {
-	// Use the passed values to draw a nice pixel using setPixel(x, y, ...).
-	// Use getPixel to read image data, which is returned in the reference parameters.
+	void init() {
+		mesh = loadObj("tiger.obj");
+		image = new Texture("tiger-atlas.jpg", true);
 
+		FileReader vs("shader.vert");
+		FileReader fs("shader.frag");
+		vertexShader = new Shader(vs.readAll(), vs.size(), VertexShader);
+		fragmentShader = new Shader(fs.readAll(), fs.size(), FragmentShader);
+
+		// This defines the structure of your Vertex Buffer
+		VertexStructure structure;
+		structure.add("pos", Float3VertexData);
+		structure.add("tex", Float2VertexData);
+
+		program = new Program;
+		program->setVertexShader(vertexShader);
+		program->setFragmentShader(fragmentShader);
+		program->link(structure);
+
+		tex = program->getTextureUnit("tex");
+
+		// Set this to 1.0f when you do your transformations in the vertex shader
+		float scale = 0.005f;
+
+		vertexBuffer = new VertexBuffer(mesh->numVertices, structure);
+		float* vertices = vertexBuffer->lock();
+		for (int i = 0; i < mesh->numVertices; ++i) {
+			vertices[i * 5 + 0] = mesh->vertices[i * 5 + 0] * scale;
+			vertices[i * 5 + 1] = mesh->vertices[i * 5 + 1] * scale;
+			vertices[i * 5 + 2] = mesh->vertices[i * 5 + 2] * scale;
+			vertices[i * 5 + 3] = mesh->vertices[i * 5 + 3];
+			vertices[i * 5 + 4] = mesh->vertices[i * 5 + 4];
+		}
+		vertexBuffer->unlock();
+
+		indexBuffer = new IndexBuffer(mesh->numFaces * 3);
+		int* indices = indexBuffer->lock();
+		for (int i = 0; i < mesh->numFaces * 3; ++i) {
+			indices[i] = mesh->indices[i];
+		}
+		indexBuffer->unlock();
+	}
 }
 
 int kore(int argc, char** argv) {
 	Application* app = new Application(argc, argv, width, height, false, "Exercise3");
 	
-	initGraphics();
+	init();
+
 	app->setCallback(update);
 
 	startTime = System::time();
 	Kore::Mixer::init();
 	Kore::Audio::init();
 	//Kore::Mixer::play(new SoundStream("back.ogg", true));
-
-	mesh = loadObj("tiger.obj");
-	image = new Image("tiger-atlas.jpg", true);
-
+	
 	Keyboard::the()->KeyDown = keyDown;
 	Keyboard::the()->KeyUp = keyUp;
 	Mouse::the()->Move = mouseMove;

@@ -9,7 +9,7 @@
 
 using namespace Kore;
 
-void shadePixel(int x, int y, float z, float u, float v);
+//void shadePixel(int x, int y, float z, float u, float v);
 
 namespace {
 	Shader* vertexShader;
@@ -170,7 +170,7 @@ namespace {
 			float z = span.z1 + zdiff * factor;
 			float u = span.u1 + udiff * factor;
 			float v = span.v1 + vdiff * factor;
-			shadePixel(x, y, z, u, 1 - v);
+			//shadePixel(x, y, z, u, 1 - v);
 			factor += factorStep;
 		}
 	}
