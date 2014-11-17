@@ -90,7 +90,7 @@ namespace {
 
 		tex = program->getTextureUnit("tex");
 
-		{
+		/*{
 			for (int i = 0; i < mesh->numVertices; ++i) {
 				mesh->vertices[i * 8 + 5] = 0;
 				mesh->vertices[i * 8 + 6] = 0;
@@ -110,11 +110,6 @@ namespace {
 				n *= -1;
 				n.normalize();
 
-				if (mesh->vertices[i1 * 8 + 5] != 0) {
-					int a = 3;
-					++a;
-				}
-
 				mesh->vertices[i1 * 8 + 5] += n.x(); mesh->vertices[i1 * 8 + 6] += n.y(); mesh->vertices[i1 * 8 + 7] += n.z();
 				mesh->vertices[i2 * 8 + 5] += n.x(); mesh->vertices[i2 * 8 + 6] += n.y(); mesh->vertices[i2 * 8 + 7] += n.z();
 				mesh->vertices[i3 * 8 + 5] += n.x(); mesh->vertices[i3 * 8 + 6] += n.y(); mesh->vertices[i3 * 8 + 7] += n.z();
@@ -126,7 +121,7 @@ namespace {
 				mesh->vertices[i * 8 + 6] /= length;
 				mesh->vertices[i * 8 + 7] /= length;
 			}
-		}
+		}*/
 
 		// Set this to 1.0f when you do your transformations in the vertex shader
 		float scale = 0.4f;
