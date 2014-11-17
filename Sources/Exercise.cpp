@@ -90,30 +90,71 @@ namespace {
 
 		tex = program->getTextureUnit("tex");
 
+		{
+			for (int i = 0; i < mesh->numVertices; ++i) {
+				mesh->vertices[i * 8 + 5] = 0;
+				mesh->vertices[i * 8 + 6] = 0;
+				mesh->vertices[i * 8 + 7] = 0;
+			}
+
+			for (int i = 0; i < mesh->numFaces; ++i) {
+				int i1 = mesh->indices[i * 3 + 0];
+				int i2 = mesh->indices[i * 3 + 1];
+				int i3 = mesh->indices[i * 3 + 2];
+				
+				vec3 v1(mesh->vertices[i1 * 8 + 0], mesh->vertices[i1 * 8 + 1], mesh->vertices[i1 * 8 + 2]);
+				vec3 v2(mesh->vertices[i2 * 8 + 0], mesh->vertices[i2 * 8 + 1], mesh->vertices[i2 * 8 + 2]);
+				vec3 v3(mesh->vertices[i3 * 8 + 0], mesh->vertices[i3 * 8 + 1], mesh->vertices[i3 * 8 + 2]);
+				
+				vec3 n = (v2 - v1) % (v3 - v1);
+				n *= -1;
+				n.normalize();
+
+				if (mesh->vertices[i1 * 8 + 5] != 0) {
+					int a = 3;
+					++a;
+				}
+
+				mesh->vertices[i1 * 8 + 5] += n.x(); mesh->vertices[i1 * 8 + 6] += n.y(); mesh->vertices[i1 * 8 + 7] += n.z();
+				mesh->vertices[i2 * 8 + 5] += n.x(); mesh->vertices[i2 * 8 + 6] += n.y(); mesh->vertices[i2 * 8 + 7] += n.z();
+				mesh->vertices[i3 * 8 + 5] += n.x(); mesh->vertices[i3 * 8 + 6] += n.y(); mesh->vertices[i3 * 8 + 7] += n.z();
+			}
+
+			for (int i = 0; i < mesh->numVertices; ++i) {
+				float length = Kore::sqrt(mesh->vertices[i * 8 + 5] * mesh->vertices[i * 8 + 5] + mesh->vertices[i * 8 + 6] * mesh->vertices[i * 8 + 6] + mesh->vertices[i * 8 + 7] * mesh->vertices[i * 8 + 7]);
+				mesh->vertices[i * 8 + 5] /= length;
+				mesh->vertices[i * 8 + 6] /= length;
+				mesh->vertices[i * 8 + 7] /= length;
+			}
+		}
+
 		// Set this to 1.0f when you do your transformations in the vertex shader
-		float scale = 0.2f;
+		float scale = 0.4f;
 
 		vertexBuffer = new VertexBuffer(mesh->numVertices, structure);
-		float* vertices = vertexBuffer->lock();
-		for (int i = 0; i < mesh->numVertices; ++i) {
-			vertices[i * 8 + 0] = mesh->vertices[i * 8 + 0] * scale;
-			vertices[i * 8 + 1] = mesh->vertices[i * 8 + 1] * scale;
-			vertices[i * 8 + 2] = mesh->vertices[i * 8 + 2] * scale;
-			vertices[i * 8 + 3] = mesh->vertices[i * 8 + 3];
-			vertices[i * 8 + 4] = 1.0f - mesh->vertices[i * 8 + 4];
-			vertices[i * 8 + 5] = mesh->vertices[i * 8 + 5];
-			vertices[i * 8 + 6] = mesh->vertices[i * 8 + 6];
-			vertices[i * 8 + 7] = mesh->vertices[i * 8 + 7];
+		{
+			float* vertices = vertexBuffer->lock();
+			for (int i = 0; i < mesh->numVertices; ++i) {
+				vertices[i * 8 + 0] = mesh->vertices[i * 8 + 0] * scale;
+				vertices[i * 8 + 1] = mesh->vertices[i * 8 + 1] * scale;
+				vertices[i * 8 + 2] = mesh->vertices[i * 8 + 2] * scale;
+				vertices[i * 8 + 3] = mesh->vertices[i * 8 + 3];
+				vertices[i * 8 + 4] = 1.0f - mesh->vertices[i * 8 + 4];
+				vertices[i * 8 + 5] = mesh->vertices[i * 8 + 5];
+				vertices[i * 8 + 6] = mesh->vertices[i * 8 + 6];
+				vertices[i * 8 + 7] = mesh->vertices[i * 8 + 7];
+			}
+			vertexBuffer->unlock();
 		}
 
-		vertexBuffer->unlock();
-
-		indexBuffer = new IndexBuffer(mesh->numFaces * 3);
-		int* indices = indexBuffer->lock();
-		for (int i = 0; i < mesh->numFaces * 3; i++) {
-			indices[i] = mesh->indices[i];
+		{
+			indexBuffer = new IndexBuffer(mesh->numFaces * 3);
+			int* indices = indexBuffer->lock();
+			for (int i = 0; i < mesh->numFaces * 3; ++i) {
+				indices[i] = mesh->indices[i];
+			}
+			indexBuffer->unlock();
 		}
-		indexBuffer->unlock();
 
 		Graphics::setRenderState(DepthTest, true);
 		Graphics::setRenderState(DepthTestCompare, ZCompareLess);
@@ -121,7 +162,7 @@ namespace {
 }
 
 int kore(int argc, char** argv) {
-	Application* app = new Application(argc, argv, width, height, false, "Exercise3");
+	Application* app = new Application(argc, argv, width, height, false, "Exercise5");
 	
 	init();
 
