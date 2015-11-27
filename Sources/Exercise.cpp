@@ -5,7 +5,6 @@
 #include <Kore/Math/Core.h>
 #include <Kore/System.h>
 #include <Kore/Input/Keyboard.h>
-#include <Kore/Input/KeyEvent.h>
 #include <Kore/Input/Mouse.h>
 #include <Kore/Audio/Mixer.h>
 #include <Kore/Graphics/Image.h>
@@ -35,28 +34,36 @@ namespace {
 		Graphics::clear(Graphics::ClearColorFlag | Graphics::ClearDepthFlag, 0xff000000);
 		
 		program->set();
-		image->set(tex);
-		vertexBuffer->set();
-		indexBuffer->set();
+		Graphics::setTexture(tex, image);
+		Graphics::setVertexBuffer(*vertexBuffer);
+		Graphics::setIndexBuffer(*indexBuffer);
 		Graphics::drawIndexedVertices();
+
+		/************************************************************************/
+		/* Exercise 5                                                           */
+		/************************************************************************/
+		/* Set values in your shader using the constant locations you defined, e.g.
+		 * Graphics::setMatrix(ConstantLocation, Value);
+		*/
+
 
 		Graphics::end();
 		Graphics::swapBuffers();
 	}
 
-	void keyDown(KeyEvent* event) {
-		if (event->keycode() == Key_Left) {
+	void keyDown(KeyCode code, wchar_t character) {
+		if (code == Key_Left) {
 			// ...
 		}
 	}
 
-	void keyUp(KeyEvent* event) {
-		if (event->keycode() == Key_Left) {
+	void keyUp(KeyCode code, wchar_t character) {
+		if (code == Key_Left) {
 			// ...
 		}
 	}
 
-	void mouseMove(int x, int y) {
+	void mouseMove(int x, int y, int movementX, int movementY) {
 
 	}
 	
@@ -90,43 +97,18 @@ namespace {
 
 		tex = program->getTextureUnit("tex");
 
-		/*{
-			for (int i = 0; i < mesh->numVertices; ++i) {
-				mesh->vertices[i * 8 + 5] = 0;
-				mesh->vertices[i * 8 + 6] = 0;
-				mesh->vertices[i * 8 + 7] = 0;
-			}
-
-			for (int i = 0; i < mesh->numFaces; ++i) {
-				int i1 = mesh->indices[i * 3 + 0];
-				int i2 = mesh->indices[i * 3 + 1];
-				int i3 = mesh->indices[i * 3 + 2];
-				
-				vec3 v1(mesh->vertices[i1 * 8 + 0], mesh->vertices[i1 * 8 + 1], mesh->vertices[i1 * 8 + 2]);
-				vec3 v2(mesh->vertices[i2 * 8 + 0], mesh->vertices[i2 * 8 + 1], mesh->vertices[i2 * 8 + 2]);
-				vec3 v3(mesh->vertices[i3 * 8 + 0], mesh->vertices[i3 * 8 + 1], mesh->vertices[i3 * 8 + 2]);
-				
-				vec3 n = (v2 - v1) % (v3 - v1);
-				n *= -1;
-				n.normalize();
-
-				mesh->vertices[i1 * 8 + 5] += n.x(); mesh->vertices[i1 * 8 + 6] += n.y(); mesh->vertices[i1 * 8 + 7] += n.z();
-				mesh->vertices[i2 * 8 + 5] += n.x(); mesh->vertices[i2 * 8 + 6] += n.y(); mesh->vertices[i2 * 8 + 7] += n.z();
-				mesh->vertices[i3 * 8 + 5] += n.x(); mesh->vertices[i3 * 8 + 6] += n.y(); mesh->vertices[i3 * 8 + 7] += n.z();
-			}
-
-			for (int i = 0; i < mesh->numVertices; ++i) {
-				float length = Kore::sqrt(mesh->vertices[i * 8 + 5] * mesh->vertices[i * 8 + 5] + mesh->vertices[i * 8 + 6] * mesh->vertices[i * 8 + 6] + mesh->vertices[i * 8 + 7] * mesh->vertices[i * 8 + 7]);
-				mesh->vertices[i * 8 + 5] /= length;
-				mesh->vertices[i * 8 + 6] /= length;
-				mesh->vertices[i * 8 + 7] /= length;
-			}
-		}*/
+		/************************************************************************/
+		/* Exercise 5                                                           */
+		/************************************************************************/
+		/* Get constant locations from your shader here, e.g.
+		 * program->getConstantLocation("bla"); 
+		 */
+		
 
 		// Set this to 1.0f when you do your transformations in the vertex shader
-		float scale = 0.4f;
+		float scale = 0.4;
 
-		vertexBuffer = new VertexBuffer(mesh->numVertices, structure);
+		vertexBuffer = new VertexBuffer(mesh->numVertices, structure, 0);
 		{
 			float* vertices = vertexBuffer->lock();
 			for (int i = 0; i < mesh->numVertices; ++i) {
@@ -157,7 +139,7 @@ namespace {
 }
 
 int kore(int argc, char** argv) {
-	Application* app = new Application(argc, argv, width, height, false, "Exercise5");
+	Application* app = new Application(argc, argv, width, height, 0, false, "Exercise5");
 	
 	init();
 
