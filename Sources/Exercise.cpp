@@ -6,10 +6,11 @@
 #include <Kore/System.h>
 #include <Kore/Input/Keyboard.h>
 #include <Kore/Input/Mouse.h>
-#include <Kore/Audio/Mixer.h>
-#include <Kore/Graphics/Image.h>
-#include <Kore/Graphics/Graphics.h>
+#include <Kore/Graphics4/Graphics.h>
+#include <Kore/Graphics4/PipelineState.h>
+
 #include "ObjLoader.h"
+#include "Memory.h"
 
 using namespace Kore;
 
@@ -17,48 +18,47 @@ namespace {
 	const int width = 1024;
 	const int height = 768;
 	double startTime;
-	Shader* vertexShader;
-	Shader* fragmentShader;
-	Program* program;
-	VertexBuffer* vertexBuffer;
-	IndexBuffer* indexBuffer;
+	Graphics4::Shader* vertexShader;
+	Graphics4::Shader* fragmentShader;
+	Graphics4::PipelineState* pipeline;
+	Graphics4::VertexBuffer* vertexBuffer;
+	Graphics4::IndexBuffer* indexBuffer;
 	Mesh* mesh;
-	Texture* image;
-	TextureUnit tex;
+	Graphics4::Texture* image;
+	Graphics4::TextureUnit tex;
 
 	void update() {
 		float t = (float)(System::time() - startTime);
-		Kore::Audio::update();
 		
-		Graphics::begin();
-		Graphics::clear(Graphics::ClearColorFlag | Graphics::ClearDepthFlag, 0xff000000);
+		Graphics4::begin();
+		Graphics4::clear(Graphics4::ClearColorFlag | Graphics4::ClearDepthFlag, 0xff000000);
 		
-		program->set();
-		Graphics::setTexture(tex, image);
-		Graphics::setVertexBuffer(*vertexBuffer);
-		Graphics::setIndexBuffer(*indexBuffer);
-		Graphics::drawIndexedVertices();
+		Graphics4::setPipeline(pipeline);
+		Graphics4::setTexture(tex, image);
+		Graphics4::setVertexBuffer(*vertexBuffer);
+		Graphics4::setIndexBuffer(*indexBuffer);
+		Graphics4::drawIndexedVertices();
 
 		/************************************************************************/
 		/* Exercise 5                                                           */
 		/************************************************************************/
 		/* Set values in your shader using the constant locations you defined, e.g.
-		 * Graphics::setMatrix(ConstantLocation, Value);
+		 * Graphics::setMatrix(location, value);
 		*/
 
 
-		Graphics::end();
-		Graphics::swapBuffers();
+		Graphics4::end();
+		Graphics4::swapBuffers();
 	}
 
-	void keyDown(KeyCode code, wchar_t character) {
-		if (code == Key_Left) {
+	void keyDown(KeyCode code) {
+		if (code == KeyLeft) {
 			// ...
 		}
 	}
 
-	void keyUp(KeyCode code, wchar_t character) {
-		if (code == Key_Left) {
+	void keyUp(KeyCode code) {
+		if (code == KeyLeft) {
 			// ...
 		}
 	}
@@ -76,39 +76,44 @@ namespace {
 	}
 
 	void init() {
+		Memory::init();
 		mesh = loadObj("tiger.obj");
-		image = new Texture("tiger-atlas.jpg", true);
+		image = new Graphics4::Texture("tiger-atlas.jpg", true);
 
 		FileReader vs("shader.vert");
 		FileReader fs("shader.frag");
-		vertexShader = new Shader(vs.readAll(), vs.size(), VertexShader);
-		fragmentShader = new Shader(fs.readAll(), fs.size(), FragmentShader);
+		vertexShader = new Graphics4::Shader(vs.readAll(), vs.size(), Graphics4::VertexShader);
+		fragmentShader = new Graphics4::Shader(fs.readAll(), fs.size(), Graphics4::FragmentShader);
 
 		// This defines the structure of your Vertex Buffer
-		VertexStructure structure;
-		structure.add("pos", Float3VertexData);
-		structure.add("tex", Float2VertexData);
-		structure.add("nor", Float3VertexData);
+		Graphics4::VertexStructure structure;
+		structure.add("pos", Graphics4::Float3VertexData);
+		structure.add("tex", Graphics4::Float2VertexData);
+		structure.add("nor", Graphics4::Float3VertexData);
 
-		program = new Program;
-		program->setVertexShader(vertexShader);
-		program->setFragmentShader(fragmentShader);
-		program->link(structure);
+		pipeline = new Graphics4::PipelineState;
+		pipeline->depthWrite = true;
+		pipeline->depthMode = Graphics4::ZCompareLess;
+		pipeline->inputLayout[0] = &structure;
+		pipeline->inputLayout[1] = nullptr;
+		pipeline->vertexShader = vertexShader;
+		pipeline->fragmentShader = fragmentShader;
+		pipeline->compile();
 
-		tex = program->getTextureUnit("tex");
+		tex = pipeline->getTextureUnit("tex");
 
 		/************************************************************************/
 		/* Exercise 5                                                           */
 		/************************************************************************/
 		/* Get constant locations from your shader here, e.g.
-		 * program->getConstantLocation("bla"); 
+		 * location = pipeline->getConstantLocation("bla"); 
 		 */
 		
 
 		// Set this to 1.0f when you do your transformations in the vertex shader
 		float scale = 0.4f;
 
-		vertexBuffer = new VertexBuffer(mesh->numVertices, structure, 0);
+		vertexBuffer = new Graphics4::VertexBuffer(mesh->numVertices, structure, 0);
 		{
 			float* vertices = vertexBuffer->lock();
 			for (int i = 0; i < mesh->numVertices; ++i) {
@@ -125,16 +130,13 @@ namespace {
 		}
 
 		{
-			indexBuffer = new IndexBuffer(mesh->numFaces * 3);
+			indexBuffer = new Graphics4::IndexBuffer(mesh->numFaces * 3);
 			int* indices = indexBuffer->lock();
 			for (int i = 0; i < mesh->numFaces * 3; ++i) {
 				indices[i] = mesh->indices[i];
 			}
 			indexBuffer->unlock();
 		}
-
-		Graphics::setRenderState(DepthTest, true);
-		Graphics::setRenderState(DepthTestCompare, ZCompareLess);
 	}
 }
 
@@ -146,9 +148,6 @@ int kore(int argc, char** argv) {
 	Kore::System::setCallback(update);
 
 	startTime = System::time();
-	Kore::Mixer::init();
-	Kore::Audio::init();
-	//Kore::Mixer::play(new SoundStream("back.ogg", true));
 	
 	Keyboard::the()->KeyDown = keyDown;
 	Keyboard::the()->KeyUp = keyUp;
